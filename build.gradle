@@ -1,0 +1,27 @@
+plugins {
+    id 'idea'
+    id 'java-library'
+    id 'maven-publish'
+//    id "com.bmuschko.nexus" version "2.3.1"
+    id "com.vanniktech.maven.publish" version "0.13.0"
+}
+
+archivesBaseName = 'spring-tools'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+group = 'com.raddatzk'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation group: 'org.springframework.boot', name: 'spring-boot', version: '2.4.2'
+}
+
+signing {
+    useGpgCmd()
+}

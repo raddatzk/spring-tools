@@ -1,0 +1,52 @@
+name: release
+
+on:
+  push:
+    branches: master
+  workflow_dispatch:
+
+jobs:
+  import-gpg:
+    runs-on: ubuntu-latest
+    env:
+      KEY_ID: ${{ secrets.GPG_KEY_ID }}
+      PASSWORD: ${{ secrets.GPG_PASSWORD }}
+      KEY_RING_FILE: ${{ secrets.GPG_KEY_RING_FILE }}
+      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+      mavenCentralRepositoryUsername: ${{ secrets.SONATYPE_USERNAME }}
+      mavenCentralRepositoryPassword: ${{ secrets.SONATYPE_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Java
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v3
+        with:
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+#          passphrase: ${{ secrets.GPG_PASSWORD }}
+      - name: find keyring
+        run: gpg --list-keys --keyid-format=short
+      - name: export gpg to secring.gpg
+        run: gpg --export-secret-keys > ~/.gnupg/secring.gpg
+      - name: Finish Configuration
+        run: |
+          mkdir /home/runner/.gradle
+          echo "sonatypeUsername=$SONATYPE_USERNAME
+          sonatypePassword=$SONATYPE_PASSWORD
+          mavenCentralRepositoryUsername=$SONATYPE_USERNAME
+          mavenCentralRepositoryPassword=$SONATYPE_PASSWORD
+          SONATYPE_NEXUS_USERNAME=$SONATYPE_USERNAME
+          SONATYPE_NEXUS_PASSWORD=$SONATYPE_PASSWORD
+
+          signing.keyId=$KEY_ID
+          signing.gnupg.keyName=$KEY_ID
+          signing.secretKeyRingFile=$KEY_RING_FILE" >> ./gradle.properties
+          chmod +x gradlew
+      - name: Upload to sona
+        run: ./gradlew publish --no-parallel --no-daemon
+
